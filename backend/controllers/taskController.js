@@ -67,25 +67,25 @@ const deleteTask = async (req, res) => {
   try {
     const taskId = req.params.id;
     console.log('Post id from req params is: ', taskId);
-    const post = await Task.findById(taskId);
+    const task = await Task.findById(taskId);
 
-    if (!post) {
-      console.log('Post not found');
-      return res.status(400).json({ error: 'Post not found' });
+    if (!task) {
+      console.log('Task not found');
+      return res.status(400).json({ error: 'Task not found' });
     }
 
     console.log('Data from middleware: ', req.user);
 
-    if (post.postedBy.toString() !== req.user._id.toString()) {
+    if (task.postedBy.toString() !== req.user._id.toString()) {
       console.log('You cant delete post created by others');
       return res
         .status(401)
         .json({ error: 'You cant delete post created by others' });
     }
 
-    await Task.findByIdAndDelete(post);
+    await Task.findByIdAndDelete(taskId);
 
-    console.log('Ta deleted successfully');
+    console.log('Task deleted successfully');
     res.status(200).json({ message: 'Task deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -95,22 +95,61 @@ const deleteTask = async (req, res) => {
 
 const getUserTasks = async (req, res) => {
   try {
-    const email = req.params.email;
+    const userId = req.user._id;
 
-    const user = await User.findOne({ email: email });
+    const user = await User.findById(userId);
     if (!user) {
       console.log('User not found');
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const posts = await Task.find({ postedBy: user._id }).sort({
+    const tasks = await Task.find({ postedBy: user._id }).sort({
       createdAt: -1,
     });
     console.log('No error');
-    res.status(200).json(posts);
+    res.status(200).json(tasks);
   } catch (err) {
     res.status(500).json({ error: err.message });
     console.log('Error in creating post', err.message);
+  }
+};
+
+const updateTask = async (req, res) => {
+  try {
+    const taskId = req.params.id;
+    const { text, title } = req.body;
+
+    const task = await Task.findById(taskId);
+
+    if (!task) {
+      console.log('Task not found');
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    if (task.postedBy.toString() !== req.user._id.toString()) {
+      console.log('Unauthorized to update task');
+      return res.status(401).json({ error: 'Unauthorized to update task' });
+    }
+
+    const maxLength = 500;
+    if (text && text.length > maxLength) {
+      return res
+        .status(400)
+        .json({ error: `Text must be less than ${maxLength} characters` });
+    }
+
+    if (text) task.text = text;
+    if (title) task.title = title;
+
+    await task.save();
+
+    console.log('Task updated successfully');
+    res
+      .status(200)
+      .json({ updatedTask: task, message: 'Task updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: err.message });
+    console.log('Error in updating task', err.message);
   }
 };
 
@@ -119,4 +158,5 @@ module.exports = {
   getTask,
   deleteTask,
   getUserTasks,
+  updateTask,
 };

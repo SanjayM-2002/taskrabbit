@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const connectDb = require('./db/connectDb');
 const cloudinary = require('cloudinary').v2;
 const userRoutes = require('./routes/userRoutes');
+const taskRoutes = require('./routes/taskRoutes');
 
 const PORT = process.env.PORT || 3001;
 
@@ -23,6 +24,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({ msg: 'health check success' });
 });
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/tasks', taskRoutes);
 
 app.listen(PORT, () => {
   console.log(`express app listening on port ${PORT}`);
